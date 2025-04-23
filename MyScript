@@ -1,125 +1,139 @@
--- Roblox servisleri
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Camera = game:GetService("Workspace").CurrentCamera
+local Camera = workspace.CurrentCamera
 local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
 
--- GUI için ScreenGui oluştur
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = LocalPlayer.PlayerGui
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "AimESP_GUI"
 
--- Ana Frame (GUI)
-local MainFrame = Instance.new("Frame")
+-- Ana panel
+local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 400, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -200, 0.5, -200)
+MainFrame.Position = UDim2.new(0.5, -200, 1.5, -200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.Parent = ScreenGui
+MainFrame.BorderColor3 = Color3.new(1, 1, 1)
+
+-- Animasyonlu giriş
+MainFrame:TweenPosition(UDim2.new(0.5, -200, 0.5, -200), "Out", "Sine", 0.5, true)
 
 -- Başlık
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, 0, 0.1, 0)
-TitleLabel.Text = "Aimbot & ESP"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 24
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Parent = MainFrame
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0.1, 0)
+Title.Text = "Aimbot & ESP"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundTransparency = 1
+Title.TextScaled = true
 
--- Aimbot On/Off Butonu
-local AimbotButton = Instance.new("TextButton")
-AimbotButton.Size = UDim2.new(0.8, 0, 0.1, 0)
-AimbotButton.Position = UDim2.new(0.1, 0, 0.2, 0)
-AimbotButton.Text = "Toggle Aimbot"
-AimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AimbotButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-AimbotButton.TextSize = 18
-AimbotButton.Parent = MainFrame
+-- Aimbot Button
+local AimbotBtn = Instance.new("TextButton", MainFrame)
+AimbotBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
+AimbotBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+AimbotBtn.Text = "Aimbot: OFF"
+AimbotBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+AimbotBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- ESP On/Off Butonu
-local ESPButton = Instance.new("TextButton")
-ESPButton.Size = UDim2.new(0.8, 0, 0.1, 0)
-ESPButton.Position = UDim2.new(0.1, 0, 0.4, 0)
-ESPButton.Text = "Toggle ESP"
-ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ESPButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-ESPButton.TextSize = 18
-ESPButton.Parent = MainFrame
+-- ESP Button
+local ESPBtn = Instance.new("TextButton", MainFrame)
+ESPBtn.Size = UDim2.new(0.8, 0, 0.1, 0)
+ESPBtn.Position = UDim2.new(0.1, 0, 0.35, 0)
+ESPBtn.Text = "ESP: OFF"
+ESPBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ESPBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- Aimbot aktiflik durumu
+-- GUI'yi kapatma butonu
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 50, 0, 30)
+CloseBtn.Position = UDim2.new(1, -60, 0, 10)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+
+-- GUI'yi geri açma butonu
+local OpenBtn = Instance.new("TextButton", ScreenGui)
+OpenBtn.Size = UDim2.new(0, 60, 0, 30)
+OpenBtn.Position = UDim2.new(1, -70, 0, 10)
+OpenBtn.Text = "Open"
+OpenBtn.TextColor3 = Color3.new(1, 1, 1)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+OpenBtn.Visible = false
+
+-- Aimbot değişkeni
 local aimbotEnabled = false
 local espEnabled = false
 
--- Aimbot işlevi
-local function Aimbot()
+-- Aimbot Fonksiyonu
+function Aimbot()
     while aimbotEnabled do
-        local closestTarget = nil
-        local shortestDistance = math.huge
-        
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local targetPos = player.Character.HumanoidRootPart.Position
-                local screenPos = Camera:WorldToScreenPoint(targetPos)
-                local distance = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
-                
-                if distance < shortestDistance then
-                    closestTarget = player
-                    shortestDistance = distance
+        local closest, shortest = nil, math.huge
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local pos = Camera:WorldToScreenPoint(p.Character.HumanoidRootPart.Position)
+                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                if dist < shortest and pos.Z > 0 then
+                    shortest = dist
+                    closest = p
                 end
             end
         end
-        
-        if closestTarget then
-            local targetPos = closestTarget.Character.HumanoidRootPart.Position
-            local direction = (targetPos - Camera.CFrame.Position).unit
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction)
+        if closest then
+            local pos = closest.Character.HumanoidRootPart.Position
+            local dir = (pos - Camera.CFrame.Position).Unit
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + dir)
         end
-        
-        wait(0.1)  -- Bu kısmı FPS'e göre ayarlayabilirsiniz.
+        wait(0.1)
     end
 end
 
--- ESP işlevi
-local function ESP()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local box = Instance.new("BillboardGui")
-            box.Size = UDim2.new(0, 150, 0, 150)
-            box.StudsOffset = Vector3.new(0, 3, 0)
-            box.AlwaysOnTop = true
-            box.Parent = player.Character
-
-            local frame = Instance.new("Frame")
-            frame.Size = UDim2.new(1, 0, 1, 0)
-            frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-            frame.BackgroundTransparency = 0.5
-            frame.Parent = box
+-- ESP Fonksiyonu (sadece kenarlık)
+function ESP()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if p.Character:FindFirstChild("ESP") then p.Character.ESP:Destroy() end
+            local gui = Instance.new("BillboardGui", p.Character)
+            gui.Name = "ESP"
+            gui.Adornee = p.Character.HumanoidRootPart
+            gui.Size = UDim2.new(4, 0, 5, 0)
+            gui.AlwaysOnTop = true
+            gui.LightInfluence = 0
+            local box = Instance.new("Frame", gui)
+            box.Size = UDim2.new(1, 0, 1, 0)
+            box.BackgroundTransparency = 1
+            box.BorderSizePixel = 2
+            box.BorderColor3 = Color3.fromRGB(255, 0, 0)
         end
     end
 end
 
--- Aimbot ve ESP'yi Toggle etme
-AimbotButton.MouseButton1Click:Connect(function()
+-- Buton bağlantıları
+AimbotBtn.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
-    if aimbotEnabled then
-        AimbotButton.Text = "Aimbot: ON"
-        Aimbot()  -- Aimbot çalıştır
-    else
-        AimbotButton.Text = "Aimbot: OFF"
-    end
+    AimbotBtn.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+    if aimbotEnabled then coroutine.wrap(Aimbot)() end
 end)
 
-ESPButton.MouseButton1Click:Connect(function()
+ESPBtn.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
-    if espEnabled then
-        ESPButton.Text = "ESP: ON"
-        ESP()  -- ESP'yi çalıştır
-    else
-        ESPButton.Text = "ESP: OFF"
-        -- ESP'yi devre dışı bırakmak için, ESP kutularını kaldırabilirsiniz.
-    end
+    ESPBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    if espEnabled then ESP() end
 end)
 
--- GUI animasyonu
-MainFrame.Position = UDim2.new(0.5, -200, 1.5, -200)  -- Başta dışarıda
-MainFrame:TweenPosition(UDim2.new(0.5, -200, 0.5, -200), "Out", "Sine", 0.5, true)
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenBtn.Visible = true
+end)
+
+OpenBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenBtn.Visible = false
+end)
+
+-- RightShift ile de aç/kapat
+UIS.InputBegan:Connect(function(input, gp)
+    if not gp and input.KeyCode == Enum.KeyCode.RightShift then
+        MainFrame.Visible = not MainFrame.Visible
+        OpenBtn.Visible = not MainFrame.Visible
+    end
+end)
